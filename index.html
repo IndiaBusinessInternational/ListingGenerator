@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IBI Product Listing Generator</title>
+    <style>
+        :root {
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border: #e5e7eb;
+            --success: #10b981;
+        }
+
+        /* Simplified Dark Mode for perfect compatibility */
+        body[data-theme="dark"] {
+            --bg: #111827;
+            --surface: #1f2937;
+            --text: #f9fafb;
+            --text-muted: #9ca3af;
+            --border: #374151;
+            --primary: #3b82f6;
+            --primary-hover: #60a5fa;
+        }
+
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+        body {
+            background-color: var(--bg); color: var(--text);
+            margin: 0; padding: 20px; transition: background-color 0.3s, color 0.3s;
+            display: flex; justify-content: center; min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--surface);
+            width: 100%; max-width: 600px;
+            border-radius: 12px; padding: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        h2 { margin: 0; font-size: 22px; }
+
+        .theme-btn {
+            background: var(--surface); border: 1px solid var(--border);
+            color: var(--text); padding: 8px 12px; border-radius: 20px;
+            cursor: pointer; font-size: 14px; font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+        
+        input[type="text"], input[type="file"] {
+            width: 100%; padding: 12px;
+            background-color: var(--bg); color: var(--text);
+            border: 1px solid var(--border); border-radius: 8px; font-size: 16px;
+        }
+
+        button.submit-btn {
+            width: 100%; padding: 16px; font-size: 16px; font-weight: bold;
+            color: white; background-color: var(--primary);
+            border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;
+        }
+        button.submit-btn:hover { background-color: var(--primary-hover); }
+        button.submit-btn:disabled { opacity: 0.7; cursor: wait; }
+
+        .results { display: none; margin-top: 30px; border-top: 2px solid var(--border); padding-top: 20px; }
+        
+        .output-box {
+            margin-bottom: 24px; background-color: var(--bg);
+            border: 1px solid var(--border); border-radius: 8px;
+            padding: 16px; position: relative;
+        }
+
+        .output-box h4 { margin: 0 0 12px 0; color: var(--primary); font-size: 14px; text-transform: uppercase; }
+        .output-text { font-size: 15px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 40px; }
+
+        .copy-btn {
+            position: absolute; bottom: 12px; right: 12px;
+            background-color: var(--surface); color: var(--text);
+            border: 1px solid var(--border); padding: 6px 16px;
+            border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold;
+            transition: 0.2s;
+        }
+
+        #loading { display: none; text-align: center; margin-top: 20px; font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>IBI Listing Generator</h2>
+        <button type="button" class="theme-btn" id="theme-toggle">🌙 Dark Mode</button>
+    </div>
+
+    <form id="listing-form">
+        <div class="form-group">
+            <label for="productName">Product Name & Core Details</label>
+            <input type="text" id="productName" placeholder="e.g. Cotton Polo T-Shirt, Mustard Yellow, XL" required>
+        </div>
+        <div class="form-group">
+            <label for="productImage">Upload Product Image</label>
+            <input type="file" id="productImage" accept="image/jpeg, image/png, image/webp" required>
+        </div>
+        <button type="submit" class="submit-btn" id="submit-btn">Generate Content & Save to Docs</button>
+    </form>
+
+    <div id="loading">Analysing image and generating SEO content... (Please wait ~10 seconds)</div>
+
+    <div class="results" id="results">
+        <h3 style="margin-top:0;">Generated Content</h3>
+        <p style="font-size: 13px; color: var(--success); font-weight: bold;">✓ Automatically Saved to Google Docs</p>
+
+        <div class="output-box">
+            <h4>1. Product Title</h4>
+            <div class="output-text" id="out-title"></div>
+            <button type="button" class="copy-btn" onclick="copyText('out-title', this)">Copy Title</button>
+        </div>
+
+        <div class="output-box">
+            <h4>2. Product Description</h4>
+            <div class="output-text" id="out-description"></div>
+            <button type="button" class="copy-btn" onclick="copyText('out-description', this)">Copy Description</button>
+        </div>
+
+        <div class="output-box">
+            <h4>3. Key Features | Bullet Points</h4>
+            <div class="output-text" id="out-features"></div>
+            <button type="button" class="copy-btn" onclick="copyText('out-features', this)">Copy Features</button>
+        </div>
+
+        <div class="output-box">
+            <h4>4. Backend Search Keywords</h4>
+            <div class="output-text" id="out-keywords"></div>
+            <button type="button" class="copy-btn" onclick="copyText('out-keywords', this)">Copy Keywords</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Make sure the entire page loads before running any script
+    document.addEventListener("DOMContentLoaded", () => {
+        
+        // --- Dark Mode Logic ---
+        const themeToggle = document.getElementById('theme-toggle');
+        let currentTheme = 'light';
+        
+        try { currentTheme = localStorage.getItem('theme') || 'light'; } catch(e) {}
+
+        if (currentTheme === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            themeToggle.innerText = '☀️ Light Mode';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.body.removeAttribute('data-theme');
+                themeToggle.innerText = '🌙 Dark Mode';
+                try { localStorage.setItem('theme', 'light'); } catch(e){}
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.innerText = '☀️ Light Mode';
+                try { localStorage.setItem('theme', 'dark'); } catch(e){}
+            }
+        });
+
+        // --- Form Submission & API Logic ---
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzR3w6_s3U2aw1KFu4dC7h7tTKQwFmdSynzX87oxq-TyqTZhaJFrBTa8GnvofSwvgUX/exec';
+
+        const form = document.getElementById('listing-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevents the page from reloading and adding '?' to URL
+            
+            const productName = document.getElementById('productName').value;
+            const fileInput = document.getElementById('productImage');
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            // UI Loading State
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Processing...';
+            loading.style.display = 'block';
+            results.style.display = 'none';
+
+            try {
+                const base64Data = await convertFileToBase64(file);
+                const base64String = base64Data.split(',')[1];
+                const mimeType = file.type;
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        productName: productName,
+                        imageBase64: base64String,
+                        mimeType: mimeType
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    document.getElementById('out-title').innerText = result.data.title;
+                    document.getElementById('out-description').innerText = result.data.description;
+                    document.getElementById('out-features').innerText = result.data.features;
+                    document.getElementById('out-keywords').innerText = result.data.keywords;
+                    
+                    results.style.display = 'block';
+                    form.reset();
+                } else {
+                    alert('Error generating content: ' + result.message);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('A network error occurred. Please check your connection and try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Generate Content & Save to Docs';
+                loading.style.display = 'none';
+            }
+        });
+    });
+
+    // --- Global Helper Functions ---
+    function copyText(elementId, btn) {
+        const text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "Copied!";
+            btn.style.backgroundColor = "var(--success)";
+            btn.style.color = "white";
+            btn.style.borderColor = "var(--success)";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.backgroundColor = "var(--surface)";
+                btn.style.color = "var(--text)";
+                btn.style.borderColor = "var(--border)";
+            }, 2000);
+        }).catch(err => {
+            alert("Copy failed. Please manually select and copy the text.");
+        });
+    }
+
+    function convertFileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+</script>
+
+</body>
+</html>
