@@ -33,7 +33,7 @@
 
 <div class="container">
     <div class="header">
-        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v3.1</span></h2>
+        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v3.2</span></h2>
         <button class="theme-btn" id="theme-toggle" type="button">🌙 Dark Mode</button>
     </div>
 
@@ -215,9 +215,8 @@
                 document.getElementById('out-keywords').innerText = result.data.keywords;
                 results.style.display = "block";
                 
-                document.getElementById('productName').value = '';
-                document.getElementById('extraKeywords').value = '';
-                document.getElementById('productImage').value = '';
+                // FIXED: Removed the code that erased the input fields, so your inputs stay put!
+                
             } else {
                 alert("AI Error: " + result.message);
             }
