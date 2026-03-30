@@ -18,10 +18,7 @@
         .container { background-color: var(--surface); max-width: 600px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .theme-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        
-        /* Updated input styles to include select dropdowns */
         input, select { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 14px;}
-        
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .submit-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px;}
         .submit-btn:disabled { opacity: 0.6; cursor: wait; }
@@ -29,17 +26,14 @@
         .output-box { background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin-bottom: 20px; position: relative; }
         .copy-btn { position: absolute; bottom: 10px; right: 10px; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: bold; }
         #loading { display: none; text-align: center; color: var(--primary); font-weight: bold; margin-top: 15px; }
-
-        @media (max-width: 480px) {
-            .grid-2 { grid-template-columns: 1fr; gap: 0; }
-        }
+        @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; gap: 0; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v3.0</span></h2>
+        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v3.1</span></h2>
         <button class="theme-btn" id="theme-toggle" type="button">🌙 Dark Mode</button>
     </div>
 
@@ -51,10 +45,12 @@
             <div>
                 <label><strong>Target Platform</strong></label>
                 <select id="platform">
-                    <option value="Standard eCommerce">Standard eCommerce</option>
-                    <option value="Amazon (Strict SEO)">Amazon (Strict SEO)</option>
-                    <option value="Shopify (Brand Focused)">Shopify (Brand Focused)</option>
-                    <option value="Instagram Shop (Short & Catchy)">Instagram Shop</option>
+                    <option value="Amazon">Amazon</option>
+                    <option value="Flipkart">Flipkart</option>
+                    <option value="Shopsy">Shopsy</option>
+                    <option value="Meesho">Meesho</option>
+                    <option value="ShopClues">ShopClues</option>
+                    <option value="IBI Website">IBI Website</option>
                 </select>
             </div>
             <div>
@@ -106,7 +102,6 @@
 </div>
 
 <script>
-    // 1. Theme Logic
     const themeToggle = document.getElementById('theme-toggle');
     try {
         if (localStorage.getItem('theme') === 'dark') {
@@ -137,7 +132,6 @@
         }
     });
 
-    // 2. Copy Function
     function copyText(id, btn) {
         navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => {
             const originalText = btn.innerText;
@@ -154,7 +148,6 @@
         }).catch(err => alert("Copy failed. Please select and copy manually."));
     }
 
-    // 3. Image Compressor
     function compressImage(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -176,7 +169,6 @@
         });
     }
 
-    // 4. Form Submission
     const form = document.getElementById('listing-form');
     const submitBtn = document.getElementById('submit-btn');
     const loading = document.getElementById('loading');
@@ -199,7 +191,6 @@
 
             submitBtn.innerText = "Sending to AI...";
 
-            // Added the new inputs to the payload
             const payload = new URLSearchParams();
             payload.append('productName', document.getElementById('productName').value);
             payload.append('platform', document.getElementById('platform').value);
@@ -224,7 +215,6 @@
                 document.getElementById('out-keywords').innerText = result.data.keywords;
                 results.style.display = "block";
                 
-                // Keep the dropdowns as they were, but clear text inputs
                 document.getElementById('productName').value = '';
                 document.getElementById('extraKeywords').value = '';
                 document.getElementById('productImage').value = '';
