@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IBI Product Listing Generator</title>
+    <style>
+        :root {
+            --bg: #f3f4f6; --surface: #ffffff; --text: #1f2937;
+            --primary: #2563eb; --border: #e5e7eb; --success: #10b981;
+        }
+        body[data-theme="dark"] {
+            --bg: #111827; --surface: #1f2937; --text: #f9fafb;
+            --primary: #3b82f6; --border: #374151;
+        }
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; min-height: 100vh; transition: 0.3s; }
+        .container { background-color: var(--surface); max-width: 600px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .theme-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        input { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
+        .submit-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .submit-btn:disabled { opacity: 0.6; cursor: wait; }
+        .results { display: none; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; }
+        .output-box { background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin-bottom: 20px; position: relative; }
+        .copy-btn { position: absolute; bottom: 10px; right: 10px; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+        #loading { display: none; text-align: center; color: var(--primary); font-weight: bold; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0;">IBI Listing Generator</h2>
+        <button class="theme-btn" id="theme-toggle" type="button">🌙 Dark Mode</button>
+    </div>
+
+    <form id="listing-form" onsubmit="event.preventDefault(); submitForm();">
+        <label><strong>Product Name & Details</strong></label>
+        <input type="text" id="productName" placeholder="e.g. Cotton Polo T-Shirt, Mustard Yellow, XL" required>
+        
+        <label><strong>Upload Product Image</strong></label>
+        <input type="file" id="productImage" accept="image/jpeg, image/png, image/webp" required>
+        
+        <button type="submit" class="submit-btn" id="submit-btn">Generate Content & Save to Docs</button>
+    </form>
+
+    <div id="loading">Analysing image... Please wait ~10 seconds.</div>
+
+    <div class="results" id="results">
+        <h3 style="color: var(--success);">✓ Saved to Google Docs</h3>
+        
+        <div class="output-box">
+            <h4 style="margin:0 0 10px 0;">1. Product Title</h4>
+            <div id="out-title" style="margin-bottom: 30px;"></div>
+            <button class="copy-btn" onclick="copyText('out-title', this)" type="button">Copy</button>
+        </div>
+        <div class="output-box">
+            <h4 style="margin:0 0 10px 0;">2. Product Description</h4>
+            <div id="out-description" style="margin-bottom: 30px; white-space: pre-wrap;"></div>
+            <button class="copy-btn" onclick="copyText('out-description', this)" type="button">Copy</button>
+        </div>
+        <div class="output-box">
+            <h4 style="margin:0 0 10px 0;">3. Key Features</h4>
+            <div id="out-features" style="margin-bottom: 30px; white-space: pre-wrap;"></div>
+            <button class="copy-btn" onclick="copyText('out-features', this)" type="button">Copy</button>
+        </div>
+        <div class="output-box">
+            <h4 style="margin:0 0 10px 0;">4. Backend Keywords</h4>
+            <div id="out-keywords" style="margin-bottom: 30px;"></div>
+            <button class="copy-btn" onclick="copyText('out-keywords', this)" type="button">Copy</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Theme Toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+        themeToggle.innerText = '☀️ Light Mode';
+    }
+    themeToggle.addEventListener('click', () => {
+        if (document.body.getAttribute('data-theme') === 'dark') {
+            document.body.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            themeToggle.innerText = '🌙 Dark Mode';
+        } else {
+            document.body.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            themeToggle.innerText = '☀️ Light Mode';
+        }
+    });
+
+    // Copy Tool
+    function copyText(id, btn) {
+        navigator.clipboard.writeText(document.getElementById(id).innerText);
+        btn.innerText = "Copied!";
+        btn.style.background = "var(--success)";
+        btn.style.color = "white";
+        setTimeout(() => { btn.innerText = "Copy"; btn.style.background = "var(--surface)"; btn.style.color = "var(--text)"; }, 2000);
+    }
+
+    // Image Compressor
+    function compressImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Main Submit Function
+    async function submitForm() {
+        const btn = document.getElementById('submit-btn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const file = document.getElementById('productImage').files[0];
+        
+        if (!file) return;
+
+        btn.disabled = true;
+        btn.innerText = "Processing Image...";
+        loading.style.display = "block";
+        results.style.display = "none";
+
+        try {
+            const compressedBase64 = await compressImage(file);
+            const base64String = compressedBase64.split(',')[1];
+
+            btn.innerText = "Sending to AI...";
+
+            // USING YOUR EXACT WEB APP URL HERE:
+            const response = await fetch('https://script.google.com/macros/s/AKfycbzR3w6_s3U2aw1KFu4dC7h7tTKQwFmdSynzX87oxq-TyqTZhaJFrBTa8GnvofSwvgUX/exec', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    productName: document.getElementById('productName').value,
+                    imageBase64: base64String,
+                    mimeType: 'image/jpeg'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                document.getElementById('out-title').innerText = result.data.title;
+                document.getElementById('out-description').innerText = result.data.description;
+                document.getElementById('out-features').innerText = result.data.features;
+                document.getElementById('out-keywords').innerText = result.data.keywords;
+                results.style.display = "block";
+                document.getElementById('listing-form').reset();
+            } else {
+                alert("AI Error: " + result.message);
+            }
+        } catch (err) {
+            alert("Connection error. Check console for details.");
+            console.error(err);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Generate Content & Save to Docs";
+            loading.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>
