@@ -31,7 +31,7 @@
 
 <div class="container">
     <div class="header">
-        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v2.3</span></h2>
+        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v2.4</span></h2>
         <button class="theme-btn" id="theme-toggle" type="button">🌙 Dark Mode</button>
     </div>
 
@@ -74,138 +74,133 @@
 </div>
 
 <script>
-    // Wait for the entire page to physically load before attaching scripts to prevent crashes
-    window.onload = function() {
-        
-        // 1. Safe Theme Logic
-        const themeToggle = document.getElementById('theme-toggle');
+    // 1. Theme Logic
+    const themeToggle = document.getElementById('theme-toggle');
+    try {
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            themeToggle.innerText = '☀️ Light Mode';
+        }
+    } catch(e) {}
+
+    themeToggle.addEventListener('click', () => {
         try {
-            if (localStorage.getItem('theme') === 'dark') {
+            if (document.body.getAttribute('data-theme') === 'dark') {
+                document.body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                themeToggle.innerText = '🌙 Dark Mode';
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                themeToggle.innerText = '☀️ Light Mode';
+            }
+        } catch(e) {
+            if (document.body.getAttribute('data-theme') === 'dark') {
+                document.body.removeAttribute('data-theme');
+                themeToggle.innerText = '🌙 Dark Mode';
+            } else {
                 document.body.setAttribute('data-theme', 'dark');
                 themeToggle.innerText = '☀️ Light Mode';
             }
-        } catch(e) { console.warn("Storage blocked by browser security."); }
-
-        themeToggle.addEventListener('click', () => {
-            try {
-                if (document.body.getAttribute('data-theme') === 'dark') {
-                    document.body.removeAttribute('data-theme');
-                    localStorage.setItem('theme', 'light');
-                    themeToggle.innerText = '🌙 Dark Mode';
-                } else {
-                    document.body.setAttribute('data-theme', 'dark');
-                    localStorage.setItem('theme', 'dark');
-                    themeToggle.innerText = '☀️ Light Mode';
-                }
-            } catch(e) {
-                // Fallback if storage is blocked
-                if (document.body.getAttribute('data-theme') === 'dark') {
-                    document.body.removeAttribute('data-theme');
-                    themeToggle.innerText = '🌙 Dark Mode';
-                } else {
-                    document.body.setAttribute('data-theme', 'dark');
-                    themeToggle.innerText = '☀️ Light Mode';
-                }
-            }
-        });
-
-        // 2. Global Copy Function
-        window.copyText = function(id, btn) {
-            navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => {
-                const originalText = btn.innerText;
-                btn.innerText = "Copied!";
-                btn.style.background = "var(--success)";
-                btn.style.color = "white";
-                btn.style.borderColor = "var(--success)";
-                setTimeout(() => { 
-                    btn.innerText = originalText; 
-                    btn.style.background = "var(--surface)"; 
-                    btn.style.color = "var(--text)"; 
-                    btn.style.borderColor = "var(--border)";
-                }, 2000);
-            }).catch(err => alert("Copy failed. Please select and copy manually."));
-        };
-
-        // 3. Safe Image Compressor
-        function compressImage(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let w = img.width, h = img.height;
-                        if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
-                        canvas.width = w; canvas.height = h;
-                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
-                    };
-                    img.onerror = reject;
-                    img.src = e.target.result;
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
         }
+    });
 
-        // 4. Form Submission
-        const form = document.getElementById('listing-form');
-        const submitBtn = document.getElementById('submit-btn');
-        const loading = document.getElementById('loading');
-        const results = document.getElementById('results');
+    // 2. Copy Function
+    function copyText(id, btn) {
+        navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "Copied!";
+            btn.style.background = "var(--success)";
+            btn.style.color = "white";
+            btn.style.borderColor = "var(--success)";
+            setTimeout(() => { 
+                btn.innerText = originalText; 
+                btn.style.background = "var(--surface)"; 
+                btn.style.color = "var(--text)"; 
+                btn.style.borderColor = "var(--border)";
+            }, 2000);
+        }).catch(err => alert("Copy failed. Please select and copy manually."));
+    }
 
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault(); // Stop page reload physically
-            
-            const file = document.getElementById('productImage').files[0];
-            if (!file) return;
-
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Processing Image...";
-            loading.style.display = "block";
-            results.style.display = "none";
-
-            try {
-                const compressedBase64 = await compressImage(file);
-                const base64String = compressedBase64.split(',')[1];
-
-                submitBtn.innerText = "Sending to AI...";
-
-                const payload = new URLSearchParams();
-                payload.append('productName', document.getElementById('productName').value);
-                payload.append('imageBase64', base64String);
-                payload.append('mimeType', 'image/jpeg');
-
-                // YOUR VERIFIED WEB APP URL
-                const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwozK9UJ3E2hD5P3-lTT0Yp9eHShGVxK5eyAVIV2DO4IISp_hdvE0Ex4sGutrcekMlIHg/exec';
-
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    body: payload
-                });
-
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    document.getElementById('out-title').innerText = result.data.title;
-                    document.getElementById('out-description').innerText = result.data.description;
-                    document.getElementById('out-features').innerText = result.data.features;
-                    document.getElementById('out-keywords').innerText = result.data.keywords;
-                    results.style.display = "block";
-                    form.reset();
-                } else {
-                    alert("AI Error: " + result.message);
-                }
-            } catch (err) {
-                alert("A network error occurred. Please try again.");
-                console.error(err);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Generate Content & Save to Docs";
-                loading.style.display = "none";
-            }
+    // 3. Image Compressor
+    function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
         });
-    };
+    }
+
+    // 4. Form Submission
+    const form = document.getElementById('listing-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const file = document.getElementById('productImage').files[0];
+        if (!file) return;
+
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Processing Image...";
+        loading.style.display = "block";
+        results.style.display = "none";
+
+        try {
+            const compressedBase64 = await compressImage(file);
+            const base64String = compressedBase64.split(',')[1];
+
+            submitBtn.innerText = "Sending to AI...";
+
+            const payload = new URLSearchParams();
+            payload.append('productName', document.getElementById('productName').value);
+            payload.append('imageBase64', base64String);
+            payload.append('mimeType', 'image/jpeg');
+
+            // VERIFIED WEB APP URL
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwozK9UJ3E2hD5P3-lTT0Yp9eHShGVxK5eyAVIV2DO4IISp_hdvE0Ex4sGutrcekMlIHg/exec';
+
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: payload
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                document.getElementById('out-title').innerText = result.data.title;
+                document.getElementById('out-description').innerText = result.data.description;
+                document.getElementById('out-features').innerText = result.data.features;
+                document.getElementById('out-keywords').innerText = result.data.keywords;
+                results.style.display = "block";
+                form.reset();
+            } else {
+                alert("AI Error: " + result.message);
+            }
+        } catch (err) {
+            alert("A network error occurred. Please try again.");
+            console.error(err);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Generate Content & Save to Docs";
+            loading.style.display = "none";
+        }
+    });
 </script>
 
 </body>
