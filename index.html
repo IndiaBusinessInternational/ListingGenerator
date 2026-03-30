@@ -14,16 +14,16 @@
             --primary: #3b82f6; --border: #374151;
         }
         * { box-sizing: border-box; font-family: sans-serif; }
-        body { background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; min-height: 100vh; transition: 0.3s; }
+        body { background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; min-height: 100vh; transition: background-color 0.3s, color 0.3s; }
         .container { background-color: var(--surface); max-width: 600px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .theme-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; }
         input { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
-        .submit-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .submit-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .submit-btn:disabled { opacity: 0.6; cursor: wait; }
         .results { display: none; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; }
         .output-box { background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin-bottom: 20px; position: relative; }
-        .copy-btn { position: absolute; bottom: 10px; right: 10px; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+        .copy-btn { position: absolute; bottom: 10px; right: 10px; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: bold; }
         #loading { display: none; text-align: center; color: var(--primary); font-weight: bold; margin-top: 15px; }
     </style>
 </head>
@@ -31,11 +31,11 @@
 
 <div class="container">
     <div class="header">
-        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v2.2</span></h2>
+        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v2.3</span></h2>
         <button class="theme-btn" id="theme-toggle" type="button">🌙 Dark Mode</button>
     </div>
 
-    <form id="listing-form" onsubmit="event.preventDefault(); submitForm();">
+    <form id="listing-form">
         <label><strong>Product Name & Details</strong></label>
         <input type="text" id="productName" placeholder="e.g. Cotton Polo T-Shirt, Mustard Yellow, XL" required>
         
@@ -48,52 +48,165 @@
     <div id="loading">Analysing image... Please wait ~10 seconds.</div>
 
     <div class="results" id="results">
-        <h3 style="color: var(--success);">✓ Saved to Google Docs</h3>
+        <h3 style="color: var(--success); margin-top: 0;">✓ Saved to Google Docs</h3>
         
         <div class="output-box">
-            <h4 style="margin:0 0 10px 0;">1. Product Title</h4>
-            <div id="out-title" style="margin-bottom: 30px;"></div>
+            <h4 style="margin:0 0 10px 0; color: var(--primary);">1. Product Title</h4>
+            <div id="out-title" style="margin-bottom: 30px; font-size: 15px; line-height: 1.5;"></div>
             <button class="copy-btn" onclick="copyText('out-title', this)" type="button">Copy</button>
         </div>
         <div class="output-box">
-            <h4 style="margin:0 0 10px 0;">2. Product Description</h4>
-            <div id="out-description" style="margin-bottom: 30px; white-space: pre-wrap;"></div>
+            <h4 style="margin:0 0 10px 0; color: var(--primary);">2. Product Description</h4>
+            <div id="out-description" style="margin-bottom: 30px; white-space: pre-wrap; font-size: 15px; line-height: 1.5;"></div>
             <button class="copy-btn" onclick="copyText('out-description', this)" type="button">Copy</button>
         </div>
         <div class="output-box">
-            <h4 style="margin:0 0 10px 0;">3. Key Features</h4>
-            <div id="out-features" style="margin-bottom: 30px; white-space: pre-wrap;"></div>
+            <h4 style="margin:0 0 10px 0; color: var(--primary);">3. Key Features</h4>
+            <div id="out-features" style="margin-bottom: 30px; white-space: pre-wrap; font-size: 15px; line-height: 1.5;"></div>
             <button class="copy-btn" onclick="copyText('out-features', this)" type="button">Copy</button>
         </div>
         <div class="output-box">
-            <h4 style="margin:0 0 10px 0;">4. Backend Keywords</h4>
-            <div id="out-keywords" style="margin-bottom: 30px;"></div>
+            <h4 style="margin:0 0 10px 0; color: var(--primary);">4. Backend Keywords</h4>
+            <div id="out-keywords" style="margin-bottom: 30px; font-size: 15px; line-height: 1.5;"></div>
             <button class="copy-btn" onclick="copyText('out-keywords', this)" type="button">Copy</button>
         </div>
     </div>
 </div>
 
 <script>
-    const themeToggle = document.getElementById('theme-toggle');
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.setAttribute('data-theme', 'dark');
-        themeToggle.innerText = '☀️ Light Mode';
-    }
-    themeToggle.addEventListener('click', () => {
-        if (document.body.getAttribute('data-theme') === 'dark') {
-            document.body.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-            themeToggle.innerText = '🌙 Dark Mode';
-        } else {
-            document.body.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-            themeToggle.innerText = '☀️ Light Mode';
-        }
-    });
+    // Wait for the entire page to physically load before attaching scripts to prevent crashes
+    window.onload = function() {
+        
+        // 1. Safe Theme Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        try {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.innerText = '☀️ Light Mode';
+            }
+        } catch(e) { console.warn("Storage blocked by browser security."); }
 
-    function copyText(id, btn) {
-        navigator.clipboard.writeText(document.getElementById(id).innerText);
-        btn.innerText = "Copied!";
-        btn.style.background = "var(--success)";
-        btn.style.color = "white";
-        setTimeout(()
+        themeToggle.addEventListener('click', () => {
+            try {
+                if (document.body.getAttribute('data-theme') === 'dark') {
+                    document.body.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'light');
+                    themeToggle.innerText = '🌙 Dark Mode';
+                } else {
+                    document.body.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                    themeToggle.innerText = '☀️ Light Mode';
+                }
+            } catch(e) {
+                // Fallback if storage is blocked
+                if (document.body.getAttribute('data-theme') === 'dark') {
+                    document.body.removeAttribute('data-theme');
+                    themeToggle.innerText = '🌙 Dark Mode';
+                } else {
+                    document.body.setAttribute('data-theme', 'dark');
+                    themeToggle.innerText = '☀️ Light Mode';
+                }
+            }
+        });
+
+        // 2. Global Copy Function
+        window.copyText = function(id, btn) {
+            navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "Copied!";
+                btn.style.background = "var(--success)";
+                btn.style.color = "white";
+                btn.style.borderColor = "var(--success)";
+                setTimeout(() => { 
+                    btn.innerText = originalText; 
+                    btn.style.background = "var(--surface)"; 
+                    btn.style.color = "var(--text)"; 
+                    btn.style.borderColor = "var(--border)";
+                }, 2000);
+            }).catch(err => alert("Copy failed. Please select and copy manually."));
+        };
+
+        // 3. Safe Image Compressor
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 4. Form Submission
+        const form = document.getElementById('listing-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Stop page reload physically
+            
+            const file = document.getElementById('productImage').files[0];
+            if (!file) return;
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Processing Image...";
+            loading.style.display = "block";
+            results.style.display = "none";
+
+            try {
+                const compressedBase64 = await compressImage(file);
+                const base64String = compressedBase64.split(',')[1];
+
+                submitBtn.innerText = "Sending to AI...";
+
+                const payload = new URLSearchParams();
+                payload.append('productName', document.getElementById('productName').value);
+                payload.append('imageBase64', base64String);
+                payload.append('mimeType', 'image/jpeg');
+
+                // YOUR VERIFIED WEB APP URL
+                const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwozK9UJ3E2hD5P3-lTT0Yp9eHShGVxK5eyAVIV2DO4IISp_hdvE0Ex4sGutrcekMlIHg/exec';
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: payload
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    document.getElementById('out-title').innerText = result.data.title;
+                    document.getElementById('out-description').innerText = result.data.description;
+                    document.getElementById('out-features').innerText = result.data.features;
+                    document.getElementById('out-keywords').innerText = result.data.keywords;
+                    results.style.display = "block";
+                    form.reset();
+                } else {
+                    alert("AI Error: " + result.message);
+                }
+            } catch (err) {
+                alert("A network error occurred. Please try again.");
+                console.error(err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Generate Content & Save to Docs";
+                loading.style.display = "none";
+            }
+        });
+    };
+</script>
+
+</body>
+</html>
