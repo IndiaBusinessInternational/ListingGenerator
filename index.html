@@ -18,20 +18,28 @@
         .container { background-color: var(--surface); max-width: 600px; margin: 0 auto; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .theme-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        input { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
-        .submit-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        
+        /* Updated input styles to include select dropdowns */
+        input, select { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 14px;}
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .submit-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px;}
         .submit-btn:disabled { opacity: 0.6; cursor: wait; }
         .results { display: none; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; }
         .output-box { background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin-bottom: 20px; position: relative; }
         .copy-btn { position: absolute; bottom: 10px; right: 10px; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: bold; }
         #loading { display: none; text-align: center; color: var(--primary); font-weight: bold; margin-top: 15px; }
+
+        @media (max-width: 480px) {
+            .grid-2 { grid-template-columns: 1fr; gap: 0; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v2.4</span></h2>
+        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v3.0</span></h2>
         <button class="theme-btn" id="theme-toggle" type="button">🌙 Dark Mode</button>
     </div>
 
@@ -39,13 +47,37 @@
         <label><strong>Product Name & Details</strong></label>
         <input type="text" id="productName" placeholder="e.g. Cotton Polo T-Shirt, Mustard Yellow, XL" required>
         
+        <div class="grid-2">
+            <div>
+                <label><strong>Target Platform</strong></label>
+                <select id="platform">
+                    <option value="Standard eCommerce">Standard eCommerce</option>
+                    <option value="Amazon (Strict SEO)">Amazon (Strict SEO)</option>
+                    <option value="Shopify (Brand Focused)">Shopify (Brand Focused)</option>
+                    <option value="Instagram Shop (Short & Catchy)">Instagram Shop</option>
+                </select>
+            </div>
+            <div>
+                <label><strong>Brand Tone</strong></label>
+                <select id="tone">
+                    <option value="Professional and Engaging">Professional</option>
+                    <option value="Eco-Friendly and Sustainable">Eco-Friendly</option>
+                    <option value="Luxury and Premium">Luxury</option>
+                    <option value="Playful and Fun">Playful</option>
+                </select>
+            </div>
+        </div>
+
+        <label><strong>Additional Keywords (Optional)</strong></label>
+        <input type="text" id="extraKeywords" placeholder="e.g. handmade, rustic, easy clean">
+
         <label><strong>Upload Product Image</strong></label>
-        <input type="file" id="productImage" accept="image/jpeg, image/png, image/webp" required>
+        <input type="file" id="productImage" accept="image/jpeg, image/png, image/webp" required style="margin-bottom: 0;">
         
         <button type="submit" class="submit-btn" id="submit-btn">Generate Content & Save to Docs</button>
     </form>
 
-    <div id="loading">Analysing image... Please wait ~10 seconds.</div>
+    <div id="loading">Analysing image & instructions... Please wait ~10 seconds.</div>
 
     <div class="results" id="results">
         <h3 style="color: var(--success); margin-top: 0;">✓ Saved to Google Docs</h3>
@@ -157,7 +189,7 @@
         if (!file) return;
 
         submitBtn.disabled = true;
-        submitBtn.innerText = "Processing Image...";
+        submitBtn.innerText = "Processing Image & Content Rules...";
         loading.style.display = "block";
         results.style.display = "none";
 
@@ -167,12 +199,15 @@
 
             submitBtn.innerText = "Sending to AI...";
 
+            // Added the new inputs to the payload
             const payload = new URLSearchParams();
             payload.append('productName', document.getElementById('productName').value);
+            payload.append('platform', document.getElementById('platform').value);
+            payload.append('tone', document.getElementById('tone').value);
+            payload.append('extraKeywords', document.getElementById('extraKeywords').value);
             payload.append('imageBase64', base64String);
             payload.append('mimeType', 'image/jpeg');
 
-            // VERIFIED WEB APP URL
             const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwozK9UJ3E2hD5P3-lTT0Yp9eHShGVxK5eyAVIV2DO4IISp_hdvE0Ex4sGutrcekMlIHg/exec';
 
             const response = await fetch(APPS_SCRIPT_URL, {
@@ -188,7 +223,11 @@
                 document.getElementById('out-features').innerText = result.data.features;
                 document.getElementById('out-keywords').innerText = result.data.keywords;
                 results.style.display = "block";
-                form.reset();
+                
+                // Keep the dropdowns as they were, but clear text inputs
+                document.getElementById('productName').value = '';
+                document.getElementById('extraKeywords').value = '';
+                document.getElementById('productImage').value = '';
             } else {
                 alert("AI Error: " + result.message);
             }
