@@ -27,17 +27,34 @@
         .copy-btn { position: absolute; bottom: 10px; right: 10px; padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: bold; }
         #loading { display: none; text-align: center; color: var(--primary); font-weight: bold; margin-top: 15px; }
         @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; gap: 0; } }
+        
+        .ai-selector-badge {
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v3.2</span></h2>
+        <h2 style="margin:0;">IBI Listing Generator <span style="font-size: 12px; color: gray;">v4.0</span></h2>
         <button class="theme-btn" id="theme-toggle" type="button">🌙 Dark Mode</button>
     </div>
 
     <form id="listing-form">
+        
+        <div class="ai-selector-badge">
+            <label style="margin-bottom: 4px; display: block;"><strong>🤖 Select AI Engine</strong></label>
+            <select id="aiModel" style="margin-bottom: 0;">
+                <option value="Gemini">Google Gemini (Default)</option>
+                <option value="ChatGPT">OpenAI ChatGPT (GPT-4o)</option>
+            </select>
+        </div>
+
         <label><strong>Product Name & Details</strong></label>
         <input type="text" id="productName" placeholder="e.g. Cotton Polo T-Shirt, Mustard Yellow, XL" required>
         
@@ -73,7 +90,7 @@
         <button type="submit" class="submit-btn" id="submit-btn">Generate Content & Save to Docs</button>
     </form>
 
-    <div id="loading">Analysing image & instructions... Please wait ~10 seconds.</div>
+    <div id="loading">Analysing image & compiling data... Please wait ~10-15 seconds.</div>
 
     <div class="results" id="results">
         <h3 style="color: var(--success); margin-top: 0;">✓ Saved to Google Docs</h3>
@@ -181,7 +198,7 @@
         if (!file) return;
 
         submitBtn.disabled = true;
-        submitBtn.innerText = "Processing Image & Content Rules...";
+        submitBtn.innerText = "Processing Data with " + document.getElementById('aiModel').value + "...";
         loading.style.display = "block";
         results.style.display = "none";
 
@@ -189,9 +206,8 @@
             const compressedBase64 = await compressImage(file);
             const base64String = compressedBase64.split(',')[1];
 
-            submitBtn.innerText = "Sending to AI...";
-
             const payload = new URLSearchParams();
+            payload.append('aiModel', document.getElementById('aiModel').value); // NEW: Send AI choice
             payload.append('productName', document.getElementById('productName').value);
             payload.append('platform', document.getElementById('platform').value);
             payload.append('tone', document.getElementById('tone').value);
@@ -214,11 +230,8 @@
                 document.getElementById('out-features').innerText = result.data.features;
                 document.getElementById('out-keywords').innerText = result.data.keywords;
                 results.style.display = "block";
-                
-                // FIXED: Removed the code that erased the input fields, so your inputs stay put!
-                
             } else {
-                alert("AI Error: " + result.message);
+                alert("API Error: " + result.message);
             }
         } catch (err) {
             alert("A network error occurred. Please try again.");
